@@ -1,0 +1,102 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Excel Sheet Maker</title>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="manifest" href="manifest.json">
+</head>
+<body class="bg-gray-100 min-h-screen flex flex-col items-center p-4">
+
+  <h1 class="text-2xl font-bold mb-4">Excel Sheet Maker</h1>
+
+  <div class="space-x-2 mb-4">
+    <button onclick="addRow()" class="bg-green-500 text-white px-4 py-2 rounded">Add Row</button>
+    <button onclick="addColumn()" class="bg-blue-500 text-white px-4 py-2 rounded">Add Column</button>
+    <button onclick="deleteRow()" class="bg-red-500 text-white px-4 py-2 rounded">Delete Row</button>
+    <button onclick="deleteColumn()" class="bg-yellow-500 text-white px-4 py-2 rounded">Delete Column</button>
+  </div>
+
+  <div class="overflow-auto w-full max-w-2xl mb-4">
+    <table id="dataTable" class="min-w-full bg-white border">
+      <thead>
+        <tr id="headerRow">
+          <th class="border p-2">Column 1</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td contenteditable="true" class="border p-2"></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="flex flex-col space-y-2 items-center">
+    <input type="text" id="fileName" placeholder="Enter file name" class="border p-2 rounded w-64">
+    <button onclick="downloadExcel()" class="bg-purple-600 text-white px-6 py-2 rounded">Download Excel</button>
+  </div>
+
+<script>
+function addRow() {
+  const table = document.getElementById("dataTable").getElementsByTagName('tbody')[0];
+  const newRow = table.insertRow();
+  const columnCount = document.getElementById("headerRow").cells.length;
+  for (let i = 0; i < columnCount; i++) {
+    const newCell = newRow.insertCell();
+    newCell.contentEditable = "true";
+    newCell.className = "border p-2";
+  }
+}
+
+function addColumn() {
+  const headerRow = document.getElementById("headerRow");
+  const newHeader = document.createElement("th");
+  newHeader.innerText = "Column " + (headerRow.cells.length + 1);
+  newHeader.className = "border p-2";
+  headerRow.appendChild(newHeader);
+
+  const table = document.getElementById("dataTable").getElementsByTagName('tbody')[0];
+  for (let row of table.rows) {
+    const newCell = row.insertCell();
+    newCell.contentEditable = "true";
+    newCell.className = "border p-2";
+  }
+}
+
+function deleteRow() {
+  const table = document.getElementById("dataTable").getElementsByTagName('tbody')[0];
+  if (table.rows.length > 1) {
+    table.deleteRow(-1);
+  } else {
+    alert("At least one row is required!");
+  }
+}
+
+function deleteColumn() {
+  const headerRow = document.getElementById("headerRow");
+  if (headerRow.cells.length > 1) {
+    headerRow.deleteCell(-1);
+    const table = document.getElementById("dataTable").getElementsByTagName('tbody')[0];
+    for (let row of table.rows) {
+      row.deleteCell(-1);
+    }
+  } else {
+    alert("At least one column is required!");
+  }
+}
+
+function downloadExcel() {
+  const table = document.getElementById('dataTable');
+  const wb = XLSX.utils.table_to_book(table, { sheet: "Sheet1" });
+  let fileName = document.getElementById('fileName').value.trim();
+  if (fileName === "") fileName = "Sheet";
+  XLSX.writeFile(wb, fileName + ".xlsx");
+}
+</script>
+
+</body>
+</html>
