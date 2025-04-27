@@ -6,8 +6,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Excel Sheet Maker</title>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/0.4.1/html2canvas.min.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="manifest" href="manifest.json">
 </head>
@@ -20,19 +18,17 @@
     <button onclick="addColumn()" class="bg-blue-500 text-white px-4 py-2 rounded">Add Column</button>
     <button onclick="deleteRow()" class="bg-red-500 text-white px-4 py-2 rounded">Delete Row</button>
     <button onclick="deleteColumn()" class="bg-yellow-500 text-white px-4 py-2 rounded">Delete Column</button>
-    <button onclick="copySelection()" class="bg-gray-700 text-white px-4 py-2 rounded">Copy</button>
-    <button onclick="pasteSelection()" class="bg-gray-700 text-white px-4 py-2 rounded">Paste</button>
-    <button onclick="emptySelection()" class="bg-gray-700 text-white px-4 py-2 rounded">Empty</button>
+    <button onclick="copyCell()" class="bg-gray-700 text-white px-4 py-2 rounded">Copy</button>
+    <button onclick="pasteCell()" class="bg-gray-700 text-white px-4 py-2 rounded">Paste</button>
+    <button onclick="emptyCell()" class="bg-gray-700 text-white px-4 py-2 rounded">Empty</button>
     <button onclick="resizeTable()" class="bg-indigo-600 text-white px-4 py-2 rounded">Resize Table</button>
-    <button onclick="importExcel()" class="bg-teal-600 text-white px-4 py-2 rounded">Import Excel</button>
-    <button onclick="exportPDF()" class="bg-purple-600 text-white px-4 py-2 rounded">Export PDF</button>
   </div>
 
   <div class="overflow-auto w-full max-w-2xl mb-4">
     <table id="dataTable" class="min-w-full bg-white border">
       <thead>
         <tr id="headerRow">
-          <th class="border p-2" contenteditable="true">Column 1</th>
+          <th class="border p-2">Column 1</th>
         </tr>
       </thead>
       <tbody>
@@ -45,22 +41,17 @@
 
   <div class="flex flex-col space-y-2 items-center">
     <input type="text" id="fileName" placeholder="Enter file name" class="border p-2 rounded w-64">
-    <button onclick="downloadExcel()" class="bg-blue-600 text-white px-6 py-2 rounded">Download Excel</button>
+    <button onclick="downloadExcel()" class="bg-purple-600 text-white px-6 py-2 rounded">Download Excel</button>
   </div>
 
 <script>
-let selectedCells = [];
+let selectedCell = null;
 let copiedText = "";
-let appendMode = true;
 
 function selectCell(cell) {
-  if (selectedCells.indexOf(cell) === -1) {
-    selectedCells.push(cell);
-    cell.classList.add("bg-yellow-200");
-  } else {
-    selectedCells = selectedCells.filter(c => c !== cell);
-    cell.classList.remove("bg-yellow-200");
-  }
+  if (selectedCell) selectedCell.classList.remove("bg-yellow-200");
+  selectedCell = cell;
+  selectedCell.classList.add("bg-yellow-200");
 }
 
 function addRow() {
@@ -113,22 +104,29 @@ function deleteColumn() {
   }
 }
 
-function copySelection() {
-  copiedText = selectedCells.map(cell => cell.innerText).join("
-");
-  alert("Copied: " + copiedText);
+function copyCell() {
+  if (selectedCell) {
+    copiedText = selectedCell.innerText;
+    alert("Copied: " + copiedText);
+  } else {
+    alert("Please select a cell first.");
+  }
 }
 
-function pasteSelection() {
-  selectedCells.forEach(cell => {
-    cell.innerText = copiedText;
-  });
+function pasteCell() {
+  if (selectedCell) {
+    selectedCell.innerText = copiedText;
+  } else {
+    alert("Please select a cell first.");
+  }
 }
 
-function emptySelection() {
-  selectedCells.forEach(cell => {
-    cell.innerText = "";
-  });
+function emptyCell() {
+  if (selectedCell) {
+    selectedCell.innerText = "";
+  } else {
+    alert("Please select a cell first.");
+  }
 }
 
 function resizeTable() {
@@ -162,47 +160,6 @@ function resizeTable() {
       alert("Invalid input!");
     }
   }
-}
-
-function importExcel() {
-  const input = document.createElement("input");
-  input.type = "file";
-  input.accept = ".xlsx";
-  input.onchange = function(event) {
-    const file = event.target.files[0];
-    const reader = new FileReader();
-    reader.onload = function(e) {
-      const data = new Uint8Array(e.target.result);
-      const workbook = XLSX.read(data, { type: "array" });
-      const sheet = workbook.Sheets[workbook.SheetNames[0]];
-      const html = XLSX.utils.sheet_to_html(sheet);
-      if (appendMode) {
-        document.querySelector("#dataTable tbody").innerHTML += html;
-      } else {
-        document.querySelector("#dataTable tbody").innerHTML = html;
-      }
-      Array.from(document.querySelectorAll('td, th')).forEach(cell => {
-        cell.setAttribute('contenteditable', 'true');
-        cell.onclick = () => selectCell(cell);
-      });
-    };
-    reader.readAsArrayBuffer(file);
-  };
-  input.click();
-}
-
-function exportPDF() {
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF();
-  const table = document.getElementById("dataTable");
-
-  html2canvas(table).then(canvas => {
-    const imgData = canvas.toDataURL("image/png");
-    doc.addImage(imgData, "PNG", 10, 10, 180, 150);
-    const tableTitle = document.getElementById('fileName').value || "Untitled";
-    doc.text(tableTitle, 14, 10);
-    doc.save(tableTitle + ".pdf");
-  });
 }
 
 function downloadExcel() {
