@@ -13,11 +13,15 @@
 
   <h1 class="text-2xl font-bold mb-4">Excel Sheet Maker</h1>
 
-  <div class="space-x-2 mb-4">
+  <div class="space-x-2 mb-4 flex flex-wrap justify-center">
     <button onclick="addRow()" class="bg-green-500 text-white px-4 py-2 rounded">Add Row</button>
     <button onclick="addColumn()" class="bg-blue-500 text-white px-4 py-2 rounded">Add Column</button>
     <button onclick="deleteRow()" class="bg-red-500 text-white px-4 py-2 rounded">Delete Row</button>
     <button onclick="deleteColumn()" class="bg-yellow-500 text-white px-4 py-2 rounded">Delete Column</button>
+    <button onclick="copyCell()" class="bg-gray-700 text-white px-4 py-2 rounded">Copy</button>
+    <button onclick="pasteCell()" class="bg-gray-700 text-white px-4 py-2 rounded">Paste</button>
+    <button onclick="emptyCell()" class="bg-gray-700 text-white px-4 py-2 rounded">Empty</button>
+    <button onclick="resizeTable()" class="bg-indigo-600 text-white px-4 py-2 rounded">Resize Table</button>
   </div>
 
   <div class="overflow-auto w-full max-w-2xl mb-4">
@@ -29,7 +33,7 @@
       </thead>
       <tbody>
         <tr>
-          <td contenteditable="true" class="border p-2"></td>
+          <td contenteditable="true" class="border p-2" onclick="selectCell(this)"></td>
         </tr>
       </tbody>
     </table>
@@ -41,6 +45,15 @@
   </div>
 
 <script>
+let selectedCell = null;
+let copiedText = "";
+
+function selectCell(cell) {
+  if (selectedCell) selectedCell.classList.remove("bg-yellow-200");
+  selectedCell = cell;
+  selectedCell.classList.add("bg-yellow-200");
+}
+
 function addRow() {
   const table = document.getElementById("dataTable").getElementsByTagName('tbody')[0];
   const newRow = table.insertRow();
@@ -49,6 +62,7 @@ function addRow() {
     const newCell = newRow.insertCell();
     newCell.contentEditable = "true";
     newCell.className = "border p-2";
+    newCell.onclick = () => selectCell(newCell);
   }
 }
 
@@ -64,6 +78,7 @@ function addColumn() {
     const newCell = row.insertCell();
     newCell.contentEditable = "true";
     newCell.className = "border p-2";
+    newCell.onclick = () => selectCell(newCell);
   }
 }
 
@@ -86,6 +101,64 @@ function deleteColumn() {
     }
   } else {
     alert("At least one column is required!");
+  }
+}
+
+function copyCell() {
+  if (selectedCell) {
+    copiedText = selectedCell.innerText;
+    alert("Copied: " + copiedText);
+  } else {
+    alert("Please select a cell first.");
+  }
+}
+
+function pasteCell() {
+  if (selectedCell) {
+    selectedCell.innerText = copiedText;
+  } else {
+    alert("Please select a cell first.");
+  }
+}
+
+function emptyCell() {
+  if (selectedCell) {
+    selectedCell.innerText = "";
+  } else {
+    alert("Please select a cell first.");
+  }
+}
+
+function resizeTable() {
+  let rows = prompt("Enter number of rows:");
+  let cols = prompt("Enter number of columns:");
+  if (rows && cols) {
+    rows = parseInt(rows);
+    cols = parseInt(cols);
+    if (rows > 0 && cols > 0) {
+      const tableHead = document.getElementById("headerRow");
+      tableHead.innerHTML = "";
+      for (let c = 1; c <= cols; c++) {
+        const th = document.createElement("th");
+        th.innerText = "Column " + c;
+        th.className = "border p-2";
+        tableHead.appendChild(th);
+      }
+
+      const tableBody = document.getElementById("dataTable").getElementsByTagName('tbody')[0];
+      tableBody.innerHTML = "";
+      for (let r = 0; r < rows; r++) {
+        const newRow = tableBody.insertRow();
+        for (let c = 0; c < cols; c++) {
+          const newCell = newRow.insertCell();
+          newCell.contentEditable = "true";
+          newCell.className = "border p-2";
+          newCell.onclick = () => selectCell(newCell);
+        }
+      }
+    } else {
+      alert("Invalid input!");
+    }
   }
 }
 
