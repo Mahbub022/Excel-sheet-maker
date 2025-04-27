@@ -20,9 +20,9 @@
     <button onclick="addColumn()" class="bg-blue-500 text-white px-4 py-2 rounded">Add Column</button>
     <button onclick="deleteRow()" class="bg-red-500 text-white px-4 py-2 rounded">Delete Row</button>
     <button onclick="deleteColumn()" class="bg-yellow-500 text-white px-4 py-2 rounded">Delete Column</button>
-    <button onclick="copyCell()" class="bg-gray-700 text-white px-4 py-2 rounded">Copy</button>
-    <button onclick="pasteCell()" class="bg-gray-700 text-white px-4 py-2 rounded">Paste</button>
-    <button onclick="emptyCell()" class="bg-gray-700 text-white px-4 py-2 rounded">Empty</button>
+    <button onclick="copySelection()" class="bg-gray-700 text-white px-4 py-2 rounded">Copy</button>
+    <button onclick="pasteSelection()" class="bg-gray-700 text-white px-4 py-2 rounded">Paste</button>
+    <button onclick="emptySelection()" class="bg-gray-700 text-white px-4 py-2 rounded">Empty</button>
     <button onclick="resizeTable()" class="bg-indigo-600 text-white px-4 py-2 rounded">Resize Table</button>
     <button onclick="importExcel()" class="bg-teal-600 text-white px-4 py-2 rounded">Import Excel</button>
     <button onclick="exportPDF()" class="bg-purple-600 text-white px-4 py-2 rounded">Export PDF</button>
@@ -49,14 +49,18 @@
   </div>
 
 <script>
-let selectedCell = null;
-let copiedText = "";
 let selectedCells = [];
+let copiedText = "";
+let appendMode = true;
 
 function selectCell(cell) {
-  if (selectedCell) selectedCell.classList.remove("bg-yellow-200");
-  selectedCell = cell;
-  selectedCell.classList.add("bg-yellow-200");
+  if (selectedCells.indexOf(cell) === -1) {
+    selectedCells.push(cell);
+    cell.classList.add("bg-yellow-200");
+  } else {
+    selectedCells = selectedCells.filter(c => c !== cell);
+    cell.classList.remove("bg-yellow-200");
+  }
 }
 
 function addRow() {
@@ -109,29 +113,22 @@ function deleteColumn() {
   }
 }
 
-function copyCell() {
-  if (selectedCell) {
-    copiedText = selectedCell.innerText;
-    alert("Copied: " + copiedText);
-  } else {
-    alert("Please select a cell first.");
-  }
+function copySelection() {
+  copiedText = selectedCells.map(cell => cell.innerText).join("
+");
+  alert("Copied: " + copiedText);
 }
 
-function pasteCell() {
-  if (selectedCell) {
-    selectedCell.innerText = copiedText;
-  } else {
-    alert("Please select a cell first.");
-  }
+function pasteSelection() {
+  selectedCells.forEach(cell => {
+    cell.innerText = copiedText;
+  });
 }
 
-function emptyCell() {
-  if (selectedCell) {
-    selectedCell.innerText = "";
-  } else {
-    alert("Please select a cell first.");
-  }
+function emptySelection() {
+  selectedCells.forEach(cell => {
+    cell.innerText = "";
+  });
 }
 
 function resizeTable() {
@@ -179,7 +176,15 @@ function importExcel() {
       const workbook = XLSX.read(data, { type: "array" });
       const sheet = workbook.Sheets[workbook.SheetNames[0]];
       const html = XLSX.utils.sheet_to_html(sheet);
-      document.querySelector("#dataTable").innerHTML = html;
+      if (appendMode) {
+        document.querySelector("#dataTable tbody").innerHTML += html;
+      } else {
+        document.querySelector("#dataTable tbody").innerHTML = html;
+      }
+      Array.from(document.querySelectorAll('td, th')).forEach(cell => {
+        cell.setAttribute('contenteditable', 'true');
+        cell.onclick = () => selectCell(cell);
+      });
     };
     reader.readAsArrayBuffer(file);
   };
